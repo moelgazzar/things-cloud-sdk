@@ -145,6 +145,36 @@ func TestIntegration(t *testing.T) {
 			t.Errorf("expected 3 total changes, got %d", len(allChanges))
 		}
 	})
+
+	t.Run("process Task7 creation", func(t *testing.T) {
+		title := "Task7 task"
+		tp := things.TaskTypeTask
+		payloadBytes, _ := json.Marshal(things.TaskActionItemPayload{
+			Title: &title,
+			Type:  &tp,
+		})
+		item := things.Item{
+			UUID:   "task-007",
+			Kind:   things.ItemKindTask7,
+			Action: things.ItemActionCreated,
+			P:      payloadBytes,
+		}
+
+		changes, err := syncer.processItems([]things.Item{item}, 3)
+		if err != nil {
+			t.Fatalf("process Task7: %v", err)
+		}
+		if len(changes) != 1 {
+			t.Fatalf("expected 1 Task7 change, got %d", len(changes))
+		}
+		if _, ok := changes[0].(TaskCreated); !ok {
+			t.Fatalf("expected TaskCreated for Task7, got %T", changes[0])
+		}
+		stored, err := syncer.State().Task("task-007")
+		if err != nil || stored == nil || stored.Title != title {
+			t.Fatalf("Task7 was not persisted correctly: task=%v err=%v", stored, err)
+		}
+	})
 }
 
 func TestStateQueries(t *testing.T) {
