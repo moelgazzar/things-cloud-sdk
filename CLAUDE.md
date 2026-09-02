@@ -2,6 +2,15 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Operational Safety Boundary
+
+This reverse-engineered API is read-only for operational use. Do not create,
+edit, complete, trash, purge, or batch-write Things Cloud records. Unsupported
+cloud writes have caused Things for Mac to crash while decoding sync history.
+Use Cultured Code's supported Things URL Scheme, Apple Shortcuts, or AppleScript
+on a Mac for every task mutation. The `things-cli` executable fails closed for
+all write commands.
+
 ## Project Overview
 
 Go SDK for the Things 3 cloud API (Cultured Code). This is a reverse-engineered, unofficial SDK — there is no official API documentation. The client mimics `ThingsMac/32209501` and sends a base64-encoded `things-client-info` device metadata header.
@@ -66,8 +75,8 @@ The `syncutil` package provides shared utilities for sync-based CLI tools:
 ### CLI Tools (`cmd/`)
 
 See `cmd/README.md` for detailed documentation. Key tools:
-- **`things-cli`** — Full CRUD operations (create, edit, complete, trash tasks)
-  - Supports `batch` command for multiple operations in one HTTP request
+- **`things-cli`** — Read-only cloud inspection (`list`, `show`, `areas`, `projects`, `tags`)
+  - Direct cloud write and batch commands intentionally fail closed
 - **`thingsync`** — JSON-based sync with workflow views (today, inbox, review, patterns)
 - **`synctest`** — Human-readable sync output for testing
 
@@ -95,6 +104,6 @@ See `docs/client-side-bugs.md` for the full investigation.
 
 ## Environment Variables
 
-The example app and real usage require:
+The example app and read-only cloud inspection require:
 - `THINGS_USERNAME` — Things account email
 - `THINGS_PASSWORD` — Things account password

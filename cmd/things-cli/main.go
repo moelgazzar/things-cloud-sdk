@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	thingscloud "github.com/arthursoares/things-cloud-sdk"
 	memory "github.com/arthursoares/things-cloud-sdk/state/memory"
+	"github.com/google/uuid"
 )
 
 // ---------------------------------------------------------------------------
@@ -101,15 +101,15 @@ type TaskCreatePayload struct {
 
 // ChecklistItemCreatePayload — all 9 fields for checklist item creation.
 type ChecklistItemCreatePayload struct {
-	Cd   float64       `json:"cd"`
-	Md   *float64      `json:"md"`
-	Tt   string        `json:"tt"`
-	Ss   int           `json:"ss"`
-	Sp   *float64      `json:"sp"`
-	Ix   int           `json:"ix"`
-	Ts   []string      `json:"ts"`
-	Lt   bool          `json:"lt"`
-	Xx   WireExtension `json:"xx"`
+	Cd float64       `json:"cd"`
+	Md *float64      `json:"md"`
+	Tt string        `json:"tt"`
+	Ss int           `json:"ss"`
+	Sp *float64      `json:"sp"`
+	Ix int           `json:"ix"`
+	Ts []string      `json:"ts"`
+	Lt bool          `json:"lt"`
+	Xx WireExtension `json:"xx"`
 }
 
 // TagCreatePayload — all 5 fields for tag creation.
@@ -1200,7 +1200,12 @@ Read commands (load state from cloud):
   projects
   tags
 
-Write commands (fast — skip state loading):
+Direct Things Cloud writes are disabled. Cultured Code does not provide a
+public Things Cloud API, and unsupported writes can corrupt a synced library.
+Create or change tasks on a Mac through the Things URL Scheme, Shortcuts, or
+AppleScript instead.
+
+Disabled write commands:
   create "Title" [--note ...] [--when today|anytime|someday|inbox]
          [--deadline YYYY-MM-DD] [--scheduled YYYY-MM-DD]
          [--project UUID] [--heading UUID] [--area UUID]
@@ -1234,14 +1239,32 @@ Batch command (reads JSON from stdin, sends all ops in one HTTP request):
     {"cmd": "edit", "uuid": "...", "title": "...", "note": "...", ...}`)
 }
 
+func isDirectCloudWriteCommand(cmd string) bool {
+	switch cmd {
+	case "create", "create-area", "create-tag", "add-checklist", "edit",
+		"complete", "trash", "purge", "move-to-today", "batch":
+		return true
+	default:
+		return false
+	}
+}
+
+func blockDirectCloudWrite(cmd string) {
+	fatalf("things-cli %s is disabled: direct Things Cloud writes are unsupported and can corrupt the Things library; use the Things URL Scheme, Shortcuts, or AppleScript on a Mac", cmd)
+}
+
 func main() {
 	if len(os.Args) < 2 {
 		printUsage()
 		os.Exit(1)
 	}
 
-	ctx := initCLI()
 	cmd := os.Args[1]
+	if isDirectCloudWriteCommand(cmd) {
+		blockDirectCloudWrite(cmd)
+	}
+
+	ctx := initCLI()
 
 	switch cmd {
 	// Read commands — need state
