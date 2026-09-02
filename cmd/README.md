@@ -1,5 +1,11 @@
 # CLI Tools
 
+> **Safety boundary:** This repository uses a reverse-engineered, unofficial
+> Things Cloud API. Operational cloud writes are disabled because unsupported
+> records can corrupt sync history and crash Things. Use the supported
+> [Things URL Scheme](https://culturedcode.com/things/support/articles/2803573/),
+> Apple Shortcuts, or AppleScript on a Mac to create or change tasks.
+
 All tools require environment variables:
 ```bash
 export THINGS_USERNAME="your@email.com"
@@ -10,9 +16,9 @@ Or create a `.env` file and source it: `source .env`
 
 ## Production Tools
 
-### things-cli
+### things-cli (read-only)
 
-Full-featured CLI for CRUD operations on Things Cloud.
+Read-only inspection of Things Cloud state.
 
 ```bash
 # Read operations (loads full state)
@@ -22,36 +28,9 @@ things-cli areas
 things-cli projects
 things-cli tags
 
-# Write operations (fast - no state loading)
-things-cli create "Task title" [options]
-things-cli edit <uuid> [--title ...] [--note ...] [--when ...]
-things-cli complete <uuid>
-things-cli trash <uuid>
-things-cli purge <uuid>
-things-cli move-to-today <uuid>
-
-# Batch operations (all in one HTTP request - much faster!)
-echo '[
-  {"cmd": "create", "title": "Task 1"},
-  {"cmd": "create", "title": "Task 2"},
-  {"cmd": "complete", "uuid": "abc123"},
-  {"cmd": "move-to-project", "uuid": "def456", "project": "proj-uuid"}
-]' | things-cli batch
-
-# Batch commands: create, complete, trash, purge, move-to-today,
-#                 move-to-project, move-to-area, edit
-
-# Create options:
-#   --note "text"           Add a note
-#   --when today|anytime|someday|inbox
-#   --deadline YYYY-MM-DD
-#   --scheduled YYYY-MM-DD
-#   --project UUID          Add to project
-#   --heading UUID          Add under heading
-#   --area UUID             Add to area
-#   --tags UUID,UUID,...    Add tags
-#   --type task|project|heading
-#   --checklist "Item 1,Item 2,..."
+# These legacy write commands intentionally fail closed:
+# create, create-area, create-tag, add-checklist, edit, complete,
+# trash, purge, move-to-today, and batch.
 ```
 
 ### thingsync
@@ -195,7 +174,8 @@ debugupdate
 
 | Use Case | Tool |
 |----------|------|
-| Create/edit/complete tasks | `things-cli` |
+| Create/edit/complete tasks | Things URL Scheme, Shortcuts, or AppleScript on a Mac |
+| Inspect cloud tasks without changing them | `things-cli` |
 | Automated workflows, JSON output | `thingsync` |
 | Quick human-readable sync test | `synctest` |
 | Debug item kinds in history | `debug` |

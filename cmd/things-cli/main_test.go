@@ -40,3 +40,24 @@ func TestNewTaskWriteEnvelopeUsesTask7(t *testing.T) {
 		})
 	}
 }
+
+func TestDirectCloudWriteCommandsAreBlocked(t *testing.T) {
+	t.Parallel()
+
+	writeCommands := []string{
+		"create", "create-area", "create-tag", "add-checklist", "edit",
+		"complete", "trash", "purge", "move-to-today", "batch",
+	}
+	for _, command := range writeCommands {
+		if !isDirectCloudWriteCommand(command) {
+			t.Fatalf("write command %q is not blocked", command)
+		}
+	}
+
+	readCommands := []string{"list", "show", "areas", "projects", "tags"}
+	for _, command := range readCommands {
+		if isDirectCloudWriteCommand(command) {
+			t.Fatalf("read command %q is unexpectedly blocked", command)
+		}
+	}
+}

@@ -11,6 +11,8 @@ This is a Go SDK for the Things Cloud API, including CLI tools and a persistent 
 ## Non-Negotiables
 - Preserve existing behavior described in `CLAUDE.md`
 - Never fake API knowledge beyond what is documented in the repo
+- Treat the reverse-engineered Things Cloud API as read-only. Direct cloud writes are disabled because unsupported records can crash Things and corrupt synced libraries.
+- Route task creation and changes through Cultured Code's supported Mac interfaces: the Things URL Scheme, Apple Shortcuts, or AppleScript.
 - Run focused Go tests for touched packages when making code changes
 
 ## Codex Role
