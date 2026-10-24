@@ -24,3 +24,10 @@ Use Codex as a repo-aware coding assistant layered on top of the existing Claude
 - `state/memory/`
 - `syncutil/`
 - `tapes/`
+
+
+## Shared Cleanliness And Task Closeout
+
+Apply the [global working agreements](/home/ubuntu/.codex/AGENTS.md), including **Keep Things Organized**, and the complete [workspace resource lifecycle](</home/ubuntu/projects/Agent Workspace/.codex/maintenance/resource-lifecycle.md>) alongside this repository's existing instructions. These cover project-owned storage, essential originals, disposable scratch/builds/screenshots, task-owned tabs/test fixtures, and Git closeout.
+
+Clean only eligible task-owned resources after authority and dependency checks. Preserve active or unpublished work, skills, history, browser logins, and service/recovery paths. Use existing project lifecycle and release gates; verify exact removals and publication. Record holds with owner, reason, dependencies, and next trigger. Missing visibility remains a hold; these instructions do not create a background deletion service.
