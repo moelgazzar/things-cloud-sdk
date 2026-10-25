@@ -7,6 +7,15 @@ can enhance your Things experience on iOS and Mac.
 
 [![Go](https://github.com/arthursoares/things-cloud-sdk/actions/workflows/go.yml/badge.svg)](https://github.com/arthursoares/things-cloud-sdk/actions/workflows/go.yml)
 
+## Operational Safety
+
+This fork uses the reverse-engineered Things Cloud API for read-only inspection.
+Its `things-cli` blocks direct cloud mutations before initializing cloud access.
+Use the supported Things URL Scheme, Apple Shortcuts, or AppleScript on a Mac
+to create or change tasks. Build the CLI from this reviewed checkout to use its
+safety gate. Low-level SDK mutation methods remain research code and are not an
+operational write interface.
+
 ## Getting Started
 
 ### Installation
@@ -49,25 +58,14 @@ func main() {
     }
     fmt.Printf("✓ Connected: %s\n", resp.Email)
 
-    // Get or create a history
-    histories, _ := client.Histories()
-    var historyID string
-    if len(histories) > 0 {
-        historyID = histories[0].ID
-    } else {
-        hist, _ := client.CreateHistory()
-        historyID = hist.ID
+    // Inspect existing histories without creating or changing records.
+    histories, err := client.Histories()
+    if err != nil {
+        panic(err)
     }
-
-    // Create a task
-    task := things.Task{
-        UUID:  things.GenerateUUID(),
-        Title: things.String("My first task from the SDK!"),
+    for _, history := range histories {
+        fmt.Printf("History: %s\n", history.ID)
     }
-
-    items := []things.Item{things.NewCreateTaskItem(task)}
-    client.Write(historyID, items, -1)
-    fmt.Printf("✓ Created task: %s\n", *task.Title)
 }
 ```
 
@@ -79,28 +77,19 @@ go run main.go
 
 ### CLI Quick Start
 
-Install and use the command-line tool:
+Build and use the read-only command-line tool from this checkout:
 
 ```bash
-# Install
-go install github.com/arthursoares/things-cloud-sdk/cmd/things-cli@latest
-
-# Create a task
-things-cli create "Buy groceries" --when today
-
-# List today's tasks
-things-cli list --today
-
-# Complete a task
-things-cli complete <task-uuid>
+go build -o things-cli ./cmd/things-cli/
+./things-cli list --today
+./things-cli projects
 ```
 
 ## Features
 
 - **Verify Credentials** — validate account access
-- **Account Management** — signup, confirmation, password change, deletion
-- **History Management** — list, create, delete, sync histories
-- **Item Read/Write** — full event-sourced CRUD for tasks, areas, tags, checklist items (supports batching multiple items in one request)
+- **History Inspection** - list and read existing histories
+- **Item Inspection** - read task, area, tag and checklist history records
 - **Task Types** — tasks, projects, and headings (action groups within projects)
 - **Structured Notes** — full-text and delta patch support for task notes
 - **Recurring Tasks** — neverending, end on date, end after N times
@@ -112,7 +101,8 @@ things-cli complete <task-uuid>
 
 ## CLI
 
-`things-cli` is a command-line tool for interacting with Things Cloud directly.
+`things-cli` provides read-only Things Cloud inspection. Direct cloud write and
+batch commands fail closed; use supported Mac interfaces for task mutations.
 
 ### Setup
 
@@ -132,106 +122,28 @@ things-cli areas
 things-cli projects
 things-cli tags
 
-# Create
-things-cli create "Title" [--note ...] [--when today|anytime|someday|inbox] \
-  [--deadline YYYY-MM-DD] [--scheduled YYYY-MM-DD] \
-  [--project UUID] [--heading UUID] [--area UUID] \
-  [--tags UUID,...] [--type task|project|heading]
-things-cli create-area "Name"
-things-cli create-tag "Name" [--shorthand KEY] [--parent UUID]
-
-# Modify
-things-cli edit <uuid> [--title ...] [--note ...] [--when ...] [--deadline ...]
-things-cli complete <uuid>
-things-cli trash <uuid>
-things-cli purge <uuid>
-things-cli move-to-today <uuid>
-
-# Batch (all operations in one HTTP request - much faster!)
-echo '[{"cmd":"complete","uuid":"abc"},{"cmd":"trash","uuid":"def"}]' | things-cli batch
 ```
+
+The disabled commands are `create`, `create-area`, `create-tag`, `add-checklist`,
+`edit`, `complete`, `trash`, `purge`, `move-to-today`, and `batch`.
 
 ### Examples
 
 ```bash
-# Create a project with tasks
-things-cli create "My Project" --type project --when anytime
-# → {"status":"created","uuid":"BXmAcvS6yK1eDhW31MuZrL","title":"My Project"}
-
-things-cli create "First Task" --project BXmAcvS6yK1eDhW31MuZrL --when today --note "Details here"
-
-# Create an area and assign tasks
-things-cli create-area "Work"
-things-cli create "Review PR" --area <area-uuid> --when today --deadline 2026-02-15
-
-# Batch operations (50 ops in ~2 sec instead of ~2-3 min)
-echo '[
-  {"cmd": "create", "title": "Task 1"},
-  {"cmd": "create", "title": "Task 2"},
-  {"cmd": "move-to-project", "uuid": "abc123", "project": "proj-uuid"},
-  {"cmd": "complete", "uuid": "def456"}
-]' | things-cli batch
+./things-cli list --inbox
+./things-cli projects
+./things-cli tags
 ```
 
 ## Advanced SDK Usage
 
 ### Working with Histories and Items
 
-```go
-package main
-
-import (
-    "fmt"
-    "os"
-    things "github.com/arthursoares/things-cloud-sdk"
-)
-
-func main() {
-    client := things.New(
-        things.APIEndpoint,
-        os.Getenv("THINGS_USERNAME"),
-        os.Getenv("THINGS_PASSWORD"),
-    )
-
-    // Create a history
-    history, _ := client.CreateHistory()
-
-    // Create a project with tasks
-    project := things.Task{
-        UUID:     things.GenerateUUID(),
-        Title:    things.String("My Project"),
-        TaskType: things.TaskTypePtr(things.TaskTypeProject),
-        Status:   things.Status(things.TaskStatusPending),
-        Schedule: things.Schedule(things.TaskScheduleAnytime),
-    }
-
-    task1 := things.Task{
-        UUID:      things.GenerateUUID(),
-        Title:     things.String("First task"),
-        ProjectID: things.String(project.UUID),
-        Schedule:  things.Schedule(things.TaskScheduleAnytime),
-    }
-
-    task2 := things.Task{
-        UUID:      things.GenerateUUID(),
-        Title:     things.String("Second task"),
-        ProjectID: things.String(project.UUID),
-        Schedule:  things.Schedule(things.TaskScheduleAnytime),
-    }
-
-    // Write all items in one batch
-    items := []things.Item{
-        things.NewCreateTaskItem(project),
-        things.NewCreateTaskItem(task1),
-        things.NewCreateTaskItem(task2),
-    }
-
-    client.Write(history.ID, items, -1)
-    fmt.Println("✓ Created project with 2 tasks")
-}
-```
-
-See the `example/` directory for more complete examples including history sync, task creation, and state aggregation.
+Use existing histories and their item streams for read-only inspection and state
+aggregation. The quick start above lists existing histories; the sync engine
+below builds local views from received records. Historical mutation examples and
+low-level write methods are research material and do not establish a supported
+cloud-write route. Use the supported Mac interfaces for every task mutation.
 
 ## Persistent Sync Engine
 
@@ -336,7 +248,7 @@ Key findings from reverse engineering the Things Cloud sync protocol:
 - **Status field (`ss`)**: `0` = Pending, `2` = Canceled, `3` = Completed. Don't confuse with `st` (schedule)!
 - **Headings (`tp=2`) must have `st=1`** (anytime). `st=0` (inbox) crashes Things.app.
 - **Tasks in projects, headings, or areas** should default to `st=1` (anytime) — they've been triaged out of inbox.
-- **Kind strings**: `Task6`, `Tag4`, `ChecklistItem3`, `Area3`, `Tombstone2`
+- **Kind strings**: `Task7`, `Task6`, `Tag4`, `ChecklistItem3`, `Area3`, `Tombstone2`
 
 See `docs/client-side-bugs.md` for the full investigation and crash analysis.
 

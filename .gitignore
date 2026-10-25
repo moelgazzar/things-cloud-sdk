@@ -26,3 +26,6 @@
 # HAR files (may contain credentials)
 *.har
 docs/blog-post.md
+
+# Private environment backups remain local
+.env.*

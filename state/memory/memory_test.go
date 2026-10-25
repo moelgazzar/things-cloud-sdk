@@ -476,3 +476,61 @@ func TestState_TasksWithoutArea_DeletedParent(t *testing.T) {
 	result := s.TasksWithoutArea()
 	_ = result // just verify no panic
 }
+
+func TestState_UpdateTask7(t *testing.T) {
+	t.Parallel()
+	s := NewState()
+
+	createPayload := json.RawMessage(`{
+		"tp":0,
+		"sr":1788048000,
+		"ss":0,
+		"st":1,
+		"tt":"Test and Launch Garage Campaign",
+		"tir":1788134400,
+		"tg":["priority-tag"],
+		"dd":1788048000,
+		"nt":{"_t":"tx","ch":2415046531,"v":"Task7 note","t":1},
+		"pr":["ppsa-project"]
+	}`)
+	if err := s.Update(things.Item{
+		UUID:   "task-7",
+		Kind:   things.ItemKindTask7,
+		Action: things.ItemActionCreated,
+		P:      createPayload,
+	}); err != nil {
+		t.Fatalf("create Task7: %v", err)
+	}
+
+	task := s.Tasks["task-7"]
+	if task == nil {
+		t.Fatal("Task7 item was not aggregated")
+	}
+	if task.Title != "Test and Launch Garage Campaign" || task.Note != "Task7 note" {
+		t.Fatalf("unexpected Task7 text fields: title=%q note=%q", task.Title, task.Note)
+	}
+	if task.ScheduledDate == nil || task.ScheduledDate.Unix() != 1788048000 {
+		t.Fatalf("unexpected scheduled date: %v", task.ScheduledDate)
+	}
+	if task.DeadlineDate == nil || task.DeadlineDate.Unix() != 1788048000 {
+		t.Fatalf("unexpected deadline: %v", task.DeadlineDate)
+	}
+	if len(task.ParentTaskIDs) != 1 || task.ParentTaskIDs[0] != "ppsa-project" {
+		t.Fatalf("unexpected parent IDs: %v", task.ParentTaskIDs)
+	}
+	if len(task.TagIDs) != 1 || task.TagIDs[0] != "priority-tag" {
+		t.Fatalf("unexpected tag IDs: %v", task.TagIDs)
+	}
+
+	if err := s.Update(things.Item{
+		UUID:   "task-7",
+		Kind:   things.ItemKindTask7,
+		Action: things.ItemActionModified,
+		P:      json.RawMessage(`{"tt":"Schedule Garage Campaign Launch for Midnight ET","ti":-3957}`),
+	}); err != nil {
+		t.Fatalf("modify Task7: %v", err)
+	}
+	if task.Title != "Schedule Garage Campaign Launch for Midnight ET" || task.TodayIndex != -3957 {
+		t.Fatalf("Task7 sparse update was not aggregated: title=%q todayIndex=%d", task.Title, task.TodayIndex)
+	}
+}
