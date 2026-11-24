@@ -107,3 +107,8 @@ See `docs/client-side-bugs.md` for the full investigation.
 The example app and read-only cloud inspection require:
 - `THINGS_USERNAME` — Things account email
 - `THINGS_PASSWORD` — Things account password
+
+## Hard Rules (Oracle)
+- Treat the reverse-engineered Things Cloud API as read-only. Direct cloud writes are disabled because unsupported records can crash Things and corrupt synced libraries.
+- Route task creation and changes through Cultured Code's supported Mac interfaces (Things URL Scheme, Apple Shortcuts, AppleScript); from Oracle use the LifeOS Things bridge queue.
+- Never fake API knowledge beyond what this repo documents. Keep changes narrow and run focused Go tests for touched packages.
